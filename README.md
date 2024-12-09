@@ -16,3 +16,12 @@ Cleaify is a Next.js application designed to promote sustainability and waste ma
 - **Frontend**: [Next.js]
 - **Backend**: Node.js and Express 
 - **Database**: neon/drizzle 
+
+---
+
+##Usage
+-**Sign Up/Login**: Create an account or log in.
+-**Upload Waste Images**: Use the "Upload" button to submit waste images.
+-**Categorize**: Confirm or modify the AI’s suggested categorization.
+-**Earn Rewards**: Earn points or tokens based on accuracy.
+-**Leaderboard**: Compete with other users to become a top contributor.
