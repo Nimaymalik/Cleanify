@@ -14,7 +14,6 @@ import {
 
 import { toast } from "react-hot-toast";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import {
@@ -25,7 +24,6 @@ import {
   getUserByEmail,
 } from "../../utils/database/action";
 
-// Make sure to set your Gemini API key in your environment variables
 const geminiApiKey = "AIzaSyCUyrPwHa-_JjliUgPBR81LM5c3ZRsuE84";
 if (!geminiApiKey) {
   console.log("Error connecting API ");
@@ -41,7 +39,8 @@ type CollectionTask = {
   collectorId: number | null;
 };
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 6;
+
 
 export default function CollectPage() {
   const [tasks, setTasks] = useState<CollectionTask[]>([]);
@@ -56,7 +55,7 @@ export default function CollectPage() {
   } | null>(null);
 
   useEffect(() => {
-    const fetchUserAndTask = async () => {
+    const fetchUserAndTasks = async () => {
       setLoading(true);
       try {
         // Fetch user
@@ -67,19 +66,17 @@ export default function CollectPage() {
             setUser(fetchedUser);
           } else {
             toast.error("User not found. Please log in again.");
-            // Redirect to login page or handle this case appropriately
           }
         } else {
-          toast.error("User not logged in. Redirecting  to log in.");
+          toast.error("User not logged in. Please log in.");
           window.location.href = "/login";
           return;
-          // Redirect to login page or handle this case appropriately
         }
 
         // Fetch tasks
         const fetchedTasks = await getWasteCollectionTasks();
-        // setTasks(fetchedTasks as CollectionTask[]);
         setTasks(fetchedTasks);
+        // setTasks(fetchedTasks as CollectionTask[]);
       } catch (error) {
         console.error("Error fetching user and tasks:", error);
         toast.error("Failed to load user data and tasks. Please try again.");
@@ -88,7 +85,7 @@ export default function CollectPage() {
       }
     };
 
-    fetchUserAndTask();
+    fetchUserAndTasks();
   }, []);
 
   const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
@@ -145,31 +142,28 @@ export default function CollectPage() {
     }
   };
 
-  const readFileAsBase64 = (dataUrl: string): string => {
-    return dataUrl.split(",")[1];
-  };
-
   const handleVerify = async () => {
     if (!selectedTask || !user) {
-      // if (!selectedTask || !verificationImage || !user) {
       toast.error("Missing required information for verification.");
       return;
     }
 
-    // setVerificationStatus("verifying");
     try {
       await handleStatusChange(selectedTask.id, "verified");
-      const earnedReward = Math.floor(Math.random() * 50) + 10; // Random reward between 10 and 59
+      const earnedReward = Math.floor(Math.random() * 50) + 10;
+
       await saveReward(user.id, earnedReward);
 
+      // Save the collected waste
       await saveCollectedWaste(selectedTask.id, user.id, {
         wasteTypeMatch: true,
         quantityMatch: true,
         confidence: 1,
       });
+
       setReward(earnedReward);
       toast.success(
-        `Task verified successfully! You earned ${earnedReward} tokens!`,
+        `Verification successful! You earned ${earnedReward} tokens!`,
         {
           duration: 5000,
           position: "top-center",
@@ -177,7 +171,7 @@ export default function CollectPage() {
       );
     } catch (error) {
       console.error("Error verifying waste:", error);
-      toast.error("Failed to verify task. Please try again.");
+      setVerificationStatus("failure");
     }
   };
 
@@ -318,7 +312,7 @@ export default function CollectPage() {
 
       {selectedTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] md:max-w-xl overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold mb-4">Verify Collection</h3>
             <p className="mb-4 text-sm text-gray-600">
               Upload a photo of the collected waste to verify and earn your
@@ -412,13 +406,11 @@ export default function CollectPage() {
       )}
 
       {/* Add a conditional render to show user info or login prompt */}
-      {user ? (
+      {/* {user ? (
         <p className="text-sm text-gray-600 mb-4">Logged in as: {user.name}</p>
       ) : (
-        <p className="text-sm text-red-600 mb-4">
-          Please log in to collect waste and earn rewards.
-        </p>
-      )}
+        <p className="text-sm text-red-600 mb-4">Please log in to collect waste and earn rewards.</p>
+      )} */}
     </div>
   );
 }

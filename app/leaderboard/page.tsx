@@ -1,9 +1,8 @@
-"use client";
-import { useState, useEffect } from "react";
-
-import { Loader, Award, User, Trophy, Crown } from "lucide-react";
-import { toast } from "react-hot-toast";
-import { getAllRewards, getUserByEmail } from "../../utils/database/action";
+'use client';
+import { useState, useEffect } from 'react';
+import { Loader, Award, User, Trophy, Crown } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import { getAllRewards, getUserByEmail } from '../../utils/database/action';
 
 type Reward = {
   id: number;
@@ -17,33 +16,47 @@ type Reward = {
 export default function LeaderboardPage() {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{
-    id: number;
-    email: string;
-    name: string;
-  } | null>(null);
+  const [user, setUser] = useState<{ id: number; email: string; name: string } | null>(null);
+
+  const aggregateRewards = (rewards: Reward[]) => {
+    const aggregated = rewards.reduce((acc, reward) => {
+      const userKey = reward.userId;
+      if (!acc[userKey]) {
+        acc[userKey] = { ...reward, points: reward.points };
+      } else {
+        acc[userKey].points += reward.points; 
+      }
+      return acc;
+    }, {} as { [key: number]: Reward });
+
+    return Object.values(aggregated);
+  };
 
   useEffect(() => {
     const fetchRewardsAndUser = async () => {
       setLoading(true);
       try {
+        // Fetch rewards and aggregate
         const fetchedRewards = await getAllRewards();
-        setRewards(fetchedRewards);
+        const aggregatedRewards = aggregateRewards(fetchedRewards);
+        aggregatedRewards.sort((a, b) => b.points - a.points); // Sort by points descending
+        setRewards(aggregatedRewards);
 
-        const userEmail = localStorage.getItem("userEmail");
+        // Fetch user data
+        const userEmail = localStorage.getItem('userEmail');
         if (userEmail) {
           const fetchedUser = await getUserByEmail(userEmail);
           if (fetchedUser) {
             setUser(fetchedUser);
           } else {
-            toast.error("User not found. Please log in again.");
+            toast.error('User not found. Please log in again.');
           }
         } else {
-          toast.error("User not logged in. Please log in.");
+          toast.error('User not logged in. Please log in.');
         }
       } catch (error) {
-        console.error("Error fetching rewards and user:", error);
-        toast.error("Failed to load leaderboard. Please try again.");
+        console.error('Error fetching rewards and user:', error);
+        toast.error('Failed to load leaderboard. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -55,9 +68,7 @@ export default function LeaderboardPage() {
   return (
     <div className="">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-semibold mb-6 text-gray-800">
-          Leaderboard{" "}
-        </h1>
+        <h1 className="text-3xl font-semibold mb-6 text-gray-800">Leaderboard </h1>
 
         {loading ? (
           <div className="flex justify-center items-center h-64">
@@ -76,26 +87,18 @@ export default function LeaderboardPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Rank
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Points
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Level
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Rank</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">User</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Points</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Level</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rewards.map((reward, index) => (
                     <tr
-                      key={reward.id}
+                      key={reward.userId}
                       className={`${
-                        user && user.id === reward.userId ? "bg-indigo-50" : ""
+                        user && user.id === reward.userId ? 'bg-indigo-50' : ''
                       } hover:bg-gray-50 transition-colors duration-150 ease-in-out`}
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -104,16 +107,14 @@ export default function LeaderboardPage() {
                             <Crown
                               className={`h-6 w-6 ${
                                 index === 0
-                                  ? "text-yellow-400"
+                                  ? 'text-yellow-400'
                                   : index === 1
-                                  ? "text-gray-400"
-                                  : "text-yellow-600"
+                                  ? 'text-gray-400'
+                                  : 'text-yellow-600'
                               }`}
                             />
                           ) : (
-                            <span className="text-sm font-medium text-gray-900">
-                              {index + 1}
-                            </span>
+                            <span className="text-sm font-medium text-gray-900">{index + 1}</span>
                           )}
                         </div>
                       </td>
@@ -123,18 +124,14 @@ export default function LeaderboardPage() {
                             <User className="h-full w-full rounded-full bg-gray-200 text-gray-500 p-2" />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
-                              {reward.userName}
-                            </div>
+                            <div className="text-sm font-medium text-gray-900">{reward.userName}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <Award className="h-5 w-5 text-indigo-500 mr-2" />
-                          <div className="text-sm font-semibold text-gray-900">
-                            {reward.points.toLocaleString()}
-                          </div>
+                          <div className="text-sm font-semibold text-gray-900">{reward.points.toLocaleString()}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

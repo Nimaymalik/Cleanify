@@ -102,28 +102,15 @@ export default function RewardsPage() {
     const reward = rewards.find((r) => r.id === rewardId);
     if (reward && balance >= reward.cost && reward.cost > 0) {
       try {
-        if (balance < reward.cost) {
-          toast.error("Insufficient balance to redeem this reward");
-          return;
-        }
-
         // Update database
         await redeemReward(user.id, rewardId);
 
         // Create a new transaction record
-        // await createTransaction(
-        //   user.id,
-        //   "redeemed",
-        //   reward.cost,
-        //   `Redeemed ${reward.name}`
-        // );
-
-        // Update createTransaction call for clarity
         await createTransaction(
           user.id,
           "redeemed",
-          balance,
-          "Redeemed all points"
+          reward.cost,
+          `Redeemed ${reward.name}`
         );
 
         // Refresh user data and rewards after redemption
@@ -295,27 +282,14 @@ export default function RewardsPage() {
                   <p className="text-sm text-gray-500 mb-4">
                     {reward.collectionInfo}
                   </p>
-                  {reward.id === 0 ? (
-                    <div className="space-y-2">
-                      <Button
-                        onClick={handleRedeemAllPoints}
-                        className="w-full bg-green-500 hover:bg-green-600 text-white"
-                        disabled={balance === 0}
-                      >
-                        <Gift className="w-4 h-4 mr-2" />
-                        Redeem All Points
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      onClick={() => handleRedeemReward(reward.id)}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white"
-                      disabled={balance < reward.cost}
-                    >
-                      <Gift className="w-4 h-4 mr-2" />
-                      Redeem Reward
-                    </Button>
-                  )}
+                  <Button
+                    onClick={() => handleRedeemReward(reward.id)}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white"
+                    disabled={balance < reward.cost}
+                  >
+                    <Gift className="w-4 h-4 mr-2" />
+                    Redeem Reward
+                  </Button>
                 </div>
               ))
             ) : (

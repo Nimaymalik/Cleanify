@@ -14,7 +14,6 @@ import { getAllRewards, getRecentReports, getWasteCollectionTasks } from "../uti
 import { Button } from "../components/ui/button";
 import { Poppins } from "next/font/google";
 import Link from "next/link";
-// import ContractInteraction from "../components/ContractInteraction";
 
 const poppins = Poppins({
   weight: ["300", "400", "600"],

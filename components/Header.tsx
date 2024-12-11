@@ -127,27 +127,43 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
 
   useEffect(() => {
     const fetchUserBalance = async () => {
-      if (userInfo && userInfo.email) {
+      if (!userInfo?.email) {
+        console.warn("User email not found!");
+        return;
+      }
+  
+      try {
         const user = await getUserByEmail(userInfo.email);
-        if (user) {
-          const userBalance = await getUserBalance(user.id);
-          setBalance(userBalance);
+        if (!user) {
+          console.warn("User not found in database.");
+          return;
         }
+  
+        const userBalance = await getUserBalance(user.id);
+        if (typeof userBalance === "number") {
+          console.log("Setting balance:", userBalance);
+          setBalance(userBalance);
+        } else {
+          console.warn("Invalid balance format received:", userBalance);
+        }
+      } catch (error) {
+        console.error("Error fetching user balance:", error);
       }
     };
-
+  
     fetchUserBalance();
-
-    // Add an event listener for balance updates
+  
     const handleBalanceUpdate = (event: CustomEvent) => {
-      setBalance(event.detail);
+      console.log("Balance update event:", event.detail);
+      if (typeof event.detail === "number") {
+        setBalance(event.detail);
+      } else {
+        console.warn("Invalid balance update format received:", event.detail);
+      }
     };
-
-    window.addEventListener(
-      "balanceUpdated",
-      handleBalanceUpdate as EventListener
-    );
-
+  
+    window.addEventListener("balanceUpdated", handleBalanceUpdate as EventListener);
+  
     return () => {
       window.removeEventListener(
         "balanceUpdated",
@@ -155,6 +171,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
       );
     };
   }, [userInfo]);
+  
 
   const login = async () => {
     if (!web3auth) {
@@ -173,7 +190,6 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
           await createUser(user.email, user.name || "Anonymous User");
         } catch (error) {
           console.error("Error creating user:", error);
-          // Handle the error appropriately, maybe show a message to the user
         }
       }
     } catch (error) {
@@ -240,6 +256,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
             onClick={onMenuClick}
           >
             <Menu className="h-6 w-6" />
+            
           </Button>
           <Link href="/" className="flex items-center">
             <Leaf className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
