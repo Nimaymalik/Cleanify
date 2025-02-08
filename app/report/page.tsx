@@ -68,24 +68,31 @@ export default function ReportPage() {
 
     setIsSubmitting(true);
     try {
-      const formattedReport = {
-        id: (
-          await createReport(
-            user.id,
-            newReport.location,
-            newReport.type,
-            newReport.amount,
-            preview || undefined
-          )
-        ).id,
+      // Call createReport and ensure it returns an object with an `id` property
+      const response = await createReport(
+        user.id,
+        newReport.location,
+        newReport.type,
+        newReport.amount,
+        preview || undefined
+      );
+
+      if (!response || !response.id) {
+        throw new Error("Failed to create report. Response is invalid.");
+      }
+
+      const formattedReport: Report = {
+        id: response.id,
         location: newReport.location,
         wasteType: newReport.type,
         amount: newReport.amount,
-        createdAt: new Date().toISOString().split("T")[0],
+        createdAt: new Date(), // Use the current date
       };
 
-      console.log(formattedReport);
+      // Add the new report to the list of reports
+      setReports((prevReports) => [formattedReport, ...prevReports]);
 
+      // Reset the form
       setNewReport({ location: "", type: "", amount: "" });
       setPreview(null);
 
