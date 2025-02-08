@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { Upload, Loader } from "lucide-react";
 import { Button } from "../../components/ui/button";
@@ -12,33 +13,32 @@ import {
   getUserByEmail,
 } from "../../utils/database/action";
 
+// Type definitions
+type User = {
+  id: number;
+  email: string;
+  name: string;
+};
+
+type Report = {
+  id: number;
+  location: string;
+  wasteType: string;
+  amount: string;
+  createdAt: Date;
+};
+
 export default function ReportPage() {
-  const [user, setUser] = useState<{
-    id: number;
-    email: string;
-    name: string;
-  } | null>(null);
-
-  const router = useRouter();
-
-  const [reports, setReports] = useState<
-    Array<{
-      id: number;
-      location: string;
-      wasteType: string;
-      amount: string;
-      createdAt: string;
-    }>
-  >([]);
-
+  const [user, setUser] = useState<User | null>(null);
+  const [reports, setReports] = useState<Array<Report>>([]);
   const [newReport, setNewReport] = useState({
     location: "",
     type: "",
     amount: "",
   });
-
   const [preview, setPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -68,13 +68,13 @@ export default function ReportPage() {
 
     setIsSubmitting(true);
     try {
-      const report = (await createReport(
+      const report: Report = await createReport(
         user.id,
         newReport.location,
         newReport.type,
         newReport.amount,
         preview || undefined
-      )) as any;
+      );
 
       const formattedReport = {
         id: report.id,
@@ -114,7 +114,7 @@ export default function ReportPage() {
           ...report,
           createdAt: report.createdAt.toISOString().split("T")[0],
         }));
-        setReports(formattedReports);
+        // setReports(formattedReports);
       } else {
         router.push("/login");
       }
@@ -269,7 +269,7 @@ export default function ReportPage() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray            -200">
+            <tbody className="divide-y divide-gray-200">
               {reports.map((report) => (
                 <tr key={report.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -282,7 +282,7 @@ export default function ReportPage() {
                     {report.amount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {report.createdAt}
+                    {new Date(report.createdAt).toLocaleDateString()}
                   </td>
                 </tr>
               ))}

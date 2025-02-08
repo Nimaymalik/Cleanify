@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -12,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [totalEarnings, setTotalEarnings] = useState(0);
+  // const [totalEarnings, setTotalEarnings] = useState(0);
   const [loading, setLoading] = useState(false); // Loading state
   const [error, setError] = useState(false); // Error state
 
@@ -25,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           const user = await getUserByEmail(userEmail);
           if (user) {
             const availableRewards = await getAvailableRewards(user.id) as any;
-            setTotalEarnings(availableRewards); // Assuming `total` is the relevant field
+            // setTotalEarnings(availableRewards); // Assuming `total` is the relevant field
           }
         }
       } catch (error) {
@@ -44,9 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50 flex flex-col">
           <Header
-            onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-            totalEarnings={totalEarnings}
-          />
+            onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
           <div className="flex flex-1">
             <SideBar  />
             <main className="flex-1 p-4 lg:p-8 ml-0 lg:ml-64 transition-all duration-300">

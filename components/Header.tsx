@@ -19,7 +19,7 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { Web3Auth } from "@web3auth/modal";
 
-import { CHAIN_NAMESPACES, IProvider, WEB3AUTH_NETWORK } from "@web3auth/base";
+import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 
 import {
@@ -143,6 +143,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         localStorage.setItem("userEmail", user.email);
         await createUser(user.email, user.name || "Anonymous User");
       }
+      console.log(web3authProvider);
     } catch (error) {
       console.error("Error during login:", error);
     }

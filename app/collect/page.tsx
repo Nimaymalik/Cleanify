@@ -15,7 +15,7 @@ import {
 import { toast } from "react-hot-toast";
 
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+// import { Input } from "../../components/ui/input";
 import {
   getWasteCollectionTasks,
   updateTaskStatus,
@@ -54,7 +54,6 @@ export default function CollectPage() {
   const [verificationStatus, setVerificationStatus] = useState<
     "idle" | "verifying" | "success" | "failure"
   >("idle");
-  
   const [reward, setReward] = useState(0);
 
   useEffect(() => {
@@ -165,18 +164,6 @@ export default function CollectPage() {
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
         Waste Collection Tasks
       </h1>
-      <div className="mb-4 flex items-center">
-        <Input
-          type="text"
-          placeholder="Search by area..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="mr-2"
-        />
-        <Button variant="outline" size="icon">
-          <Search className="h-4 w-4" />
-        </Button>
-      </div>
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader className="animate-spin h-8 w-8 text-gray-500" />

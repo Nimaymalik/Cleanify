@@ -5,8 +5,6 @@ import {
   Coins,
   ArrowUpRight,
   ArrowDownRight,
-  Gift,
-  AlertCircle,
   Loader,
 } from "lucide-react";
 

@@ -7,7 +7,6 @@ import {
   Users,
   Coins,
   MapPin,
-  ChevronRight,
 } from "lucide-react";
 import { getAllRewards, getRecentReports, getWasteCollectionTasks } from "../utils/database/action";
 import { Button } from "../components/ui/button";
