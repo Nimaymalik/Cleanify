@@ -287,7 +287,7 @@ export async function getWasteCollectionTasks(limit: number = 20) {
       .limit(limit)
       .execute();
 
-    return tasks.map((task:any) => ({
+    return tasks.map((task: any) => ({
       ...task,
       date: task.date.toISOString().split("T")[0], // Format date as YYYY-MM-DD
     }));
@@ -428,17 +428,26 @@ export async function getRewardTransactions(userId: number) {
   }
 }
 
+export interface Reward {
+  id: string;
+  name: string;
+  points: number; // Example fields
+}
+
 export async function getAvailableRewards(userId: number) {
   try {
     console.log("Fetching available rewards for user:", userId);
 
     // Get user's total points
-    const userTransactions = await getRewardTransactions(userId) as any;
-    const userPoints = userTransactions?.reduce((total:any, transaction:any) => {
-      return transaction.type.startsWith("earned")
-        ? total + transaction.amount
-        : total - transaction.amount;
-    }, 0);
+    const userTransactions = (await getRewardTransactions(userId)) as any;
+    const userPoints = userTransactions?.reduce(
+      (total: any, transaction: any) => {
+        return transaction.type.startsWith("earned")
+          ? total + transaction.amount
+          : total - transaction.amount;
+      },
+      0
+    );
 
     console.log("User total points:", userPoints);
 
@@ -473,7 +482,7 @@ export async function getAvailableRewards(userId: number) {
     return allRewards;
   } catch (error) {
     console.error("Error fetching rewards:", error);
-    return [];//empty array
+    return []; //empty array
   }
 }
 

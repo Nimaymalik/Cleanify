@@ -5,7 +5,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Header from "../components/Header";
 import SideBar from "../components/Sidebar";
-import { getUserByEmail, getAvailableRewards } from "../utils/database/action";
+import { getUserByEmail, getAvailableRewards ,Reward} from "../utils/database/action";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +26,8 @@ export default function RootLayout({
         if (userEmail) {
           const user = await getUserByEmail(userEmail);
           if (user) {
-            (await getAvailableRewards(user.id)) as any;
+            const rewards: Reward[] = await getAvailableRewards(user.id); // Use typed rewards
+            console.log("Fetched rewards:", rewards);
           }
         }
       } catch (error) {

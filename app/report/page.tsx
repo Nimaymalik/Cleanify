@@ -30,7 +30,7 @@ type Report = {
 
 export default function ReportPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [reports, setReports] = useState<Array<Report>>([]);
+  const [reports] = useState<Array<Report>>([]);
   const [newReport, setNewReport] = useState({
     location: "",
     type: "",
