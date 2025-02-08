@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -11,7 +10,6 @@ import {
   User,
   ChevronDown,
   LogIn,
-  LogOut,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -32,8 +30,11 @@ import {
   getUserBalance,
 } from "../utils/database/action";
 
-const clientId =
-  "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { useMediaQuery } from "../hooks/useMediaQuery";
+
+const clientId = "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs";
 
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
@@ -45,10 +46,6 @@ const chainConfig = {
   tickerName: "Ethereum",
   logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
 };
-import { usePathname } from "next/navigation";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { useMediaQuery } from "../hooks/useMediaQuery";
 
 const privateKeyProvider = new EthereumPrivateKeyProvider({
   config: { chainConfig },
@@ -62,38 +59,33 @@ const web3auth = new Web3Auth({
 
 interface HeaderProps {
   onMenuClick: () => void;
-  totalEarnings: number;
 }
 
-export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
-  const [provider, setProvider] = useState<IProvider | null>(null);
+interface Notification {
+  id: number;
+  type: string;
+  message: string;
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<any>(null);
-  const pathname = usePathname();
+  const [userInfo, setUserInfo] = useState<{ email?: string; name?: string } | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [balance, setBalance] = useState(0);
-
-  console.log("user info", userInfo);
 
   useEffect(() => {
     const init = async () => {
       try {
         await web3auth.initModal();
-        setProvider(web3auth.provider);
-
         if (web3auth.connected) {
           setLoggedIn(true);
           const user = await web3auth.getUserInfo();
           setUserInfo(user);
           if (user.email) {
             localStorage.setItem("userEmail", user.email);
-            try {
-              await createUser(user.email, user.name || "Anonymous User");
-            } catch (error) {
-              console.error("Error creating user:", error);
-            }
+            await createUser(user.email, user.name || "Anonymous User");
           }
         }
       } catch (error) {
@@ -108,7 +100,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
 
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (userInfo && userInfo.email) {
+      if (userInfo?.email) {
         const user = await getUserByEmail(userInfo.email);
         if (user) {
           const unreadNotifications = await getUnreadNotifications(user.id);
@@ -119,78 +111,37 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
 
     fetchNotifications();
 
-    // Set up periodic checking for new notifications
     const notificationInterval = setInterval(fetchNotifications, 30000); // Check every 30 seconds
-
     return () => clearInterval(notificationInterval);
   }, [userInfo]);
 
   useEffect(() => {
     const fetchUserBalance = async () => {
-      if (!userInfo?.email) {
-        console.warn("User email not found!");
-        return;
-      }
-  
+      if (!userInfo?.email) return;
+
       try {
         const user = await getUserByEmail(userInfo.email);
-        if (!user) {
-          console.warn("User not found in database.");
-          return;
-        }
-  
-        const userBalance = await getUserBalance(user.id);
-        if (typeof userBalance === "number") {
-          console.log("Setting balance:", userBalance);
-          setBalance(userBalance);
-        } else {
-          console.warn("Invalid balance format received:", userBalance);
+        if (user) {
+          const userBalance = await getUserBalance(user.id);
+          setBalance(typeof userBalance === "number" ? userBalance : 0);
         }
       } catch (error) {
         console.error("Error fetching user balance:", error);
       }
     };
-  
+
     fetchUserBalance();
-  
-    const handleBalanceUpdate = (event: CustomEvent) => {
-      console.log("Balance update event:", event.detail);
-      if (typeof event.detail === "number") {
-        setBalance(event.detail);
-      } else {
-        console.warn("Invalid balance update format received:", event.detail);
-      }
-    };
-  
-    window.addEventListener("balanceUpdated", handleBalanceUpdate as EventListener);
-  
-    return () => {
-      window.removeEventListener(
-        "balanceUpdated",
-        handleBalanceUpdate as EventListener
-      );
-    };
   }, [userInfo]);
-  
 
   const login = async () => {
-    if (!web3auth) {
-      console.log("web3auth not initialized yet");
-      return;
-    }
     try {
       const web3authProvider = await web3auth.connect();
-      setProvider(web3authProvider);
       setLoggedIn(true);
       const user = await web3auth.getUserInfo();
       setUserInfo(user);
       if (user.email) {
         localStorage.setItem("userEmail", user.email);
-        try {
-          await createUser(user.email, user.name || "Anonymous User");
-        } catch (error) {
-          console.error("Error creating user:", error);
-        }
+        await createUser(user.email, user.name || "Anonymous User");
       }
     } catch (error) {
       console.error("Error during login:", error);
@@ -198,13 +149,8 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
   };
 
   const logout = async () => {
-    if (!web3auth) {
-      console.log("web3auth not initialized yet");
-      return;
-    }
     try {
       await web3auth.logout();
-      setProvider(null);
       setLoggedIn(false);
       setUserInfo(null);
       localStorage.removeItem("userEmail");
@@ -213,60 +159,32 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
     }
   };
 
-  const getUserInfo = async () => {
-    if (web3auth.connected) {
-      const user = await web3auth.getUserInfo();
-      setUserInfo(user);
-      if (user.email) {
-        localStorage.setItem("userEmail", user.email);
-        try {
-          await createUser(user.email, user.name || "Anonymous User");
-        } catch (error) {
-          console.error("Error creating user:", error);
-        }
-      }
+  const handleNotificationClick = async (notificationId: number) => {
+    try {
+      await markNotificationAsRead(notificationId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
     }
   };
 
-  const handleNotificationClick = async (notificationId: number) => {
-    await markNotificationAsRead(notificationId);
-    setNotifications((prevNotifications) =>
-      prevNotifications.filter(
-        (notification) => notification.id !== notificationId
-      )
-    );
-  };
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center">
-        Loading Web3Auth...
-      </div>
-    );
+    return <div className="flex items-center justify-center">Loading Web3Auth...</div>;
   }
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-2 md:mr-4"
-            onClick={onMenuClick}
-          >
+          <Button variant="ghost" size="icon" className="mr-2 md:mr-4" onClick={onMenuClick}>
             <Menu className="h-6 w-6" />
-            
           </Button>
           <Link href="/" className="flex items-center">
             <Leaf className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
-            <div className="flex flex-col">
-              <span className="font-bold text-base md:text-lg text-gray-800">
-                Cleanify
-              </span>
-            </div>
+            <span className="font-bold text-base md:text-lg text-gray-800">Cleanify</span>
           </Link>
         </div>
+
         {!isMobile && (
           <div className="flex-1 max-w-xl mx-4">
             <div className="relative">
@@ -279,12 +197,14 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
             </div>
           </div>
         )}
+
         <div className="flex items-center">
           {isMobile && (
             <Button variant="ghost" size="icon" className="mr-2">
               <Search className="h-5 w-5" />
             </Button>
           )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="mr-2 relative">
@@ -305,9 +225,7 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
                   >
                     <div className="flex flex-col">
                       <span className="font-medium">{notification.type}</span>
-                      <span className="text-sm text-gray-500">
-                        {notification.message}
-                      </span>
+                      <span className="text-sm text-gray-500">{notification.message}</span>
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -316,12 +234,12 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
           <div className="mr-2 md:mr-4 flex items-center bg-gray-100 rounded-full px-2 md:px-3 py-1">
             <Coins className="h-4 w-4 md:h-5 md:w-5 mr-1 text-green-500" />
-            <span className="font-semibold text-sm md:text-base text-gray-800">
-              {balance.toFixed(2)}
-            </span>
+            <span className="font-semibold text-sm md:text-base text-gray-800">{balance.toFixed(2)}</span>
           </div>
+
           {!loggedIn ? (
             <Button
               onClick={login}
@@ -333,23 +251,16 @@ export default function Header({ onMenuClick, totalEarnings }: HeaderProps) {
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="flex items-center"
-                >
+                <Button variant="ghost" size="icon" className="flex items-center">
                   <User className="h-5 w-5 mr-1" />
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={getUserInfo}>
-                  {userInfo ? userInfo.name : "Fetch User Info"}
-                </DropdownMenuItem>
+                <DropdownMenuItem>{userInfo ? userInfo.name : "User Info"}</DropdownMenuItem>
                 <DropdownMenuItem>
                   <Link href="/settings">Profile</Link>
                 </DropdownMenuItem>
-
                 <DropdownMenuItem onClick={logout} className="cursor-pointer">
                   Sign Out
                 </DropdownMenuItem>

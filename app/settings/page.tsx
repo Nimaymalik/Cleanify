@@ -20,7 +20,6 @@ export default function SettingsPage() {
     notifications: true,
   });
 
-  const [loading, setLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;

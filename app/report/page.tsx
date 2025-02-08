@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { MapPin, Upload, CheckCircle, Loader } from "lucide-react";
+import { Upload, Loader } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { Libraries, useJsApiLoader } from "@react-google-maps/api";
 
 import {
   createReport,
@@ -12,9 +11,6 @@ import {
   getRecentReports,
   getUserByEmail,
 } from "../../utils/database/action";
-
-const googleMapsApiKey = "";
-const libraries: Libraries = ["places"];
 
 export default function ReportPage() {
   const [user, setUser] = useState<{
@@ -41,15 +37,8 @@ export default function ReportPage() {
     amount: "",
   });
 
-  const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: googleMapsApiKey!,
-    libraries: libraries,
-  });
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -61,7 +50,6 @@ export default function ReportPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
-      setFile(selectedFile);
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreview(e.target?.result as string);
@@ -98,7 +86,6 @@ export default function ReportPage() {
 
       setReports([formattedReport, ...reports]);
       setNewReport({ location: "", type: "", amount: "" });
-      setFile(null);
       setPreview(null);
 
       toast.success(

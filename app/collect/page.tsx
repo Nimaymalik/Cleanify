@@ -24,10 +24,7 @@ import {
   getUserByEmail,
 } from "../../utils/database/action";
 
-const geminiApiKey = "AIzaSyCUyrPwHa-_JjliUgPBR81LM5c3ZRsuE84";
-if (!geminiApiKey) {
-  console.log("Error connecting API ");
-}
+const ITEMS_PER_PAGE = 6;
 
 type CollectionTask = {
   id: number;
@@ -38,9 +35,6 @@ type CollectionTask = {
   date: string;
   collectorId: number | null;
 };
-
-const ITEMS_PER_PAGE = 6;
-
 
 export default function CollectPage() {
   const [tasks, setTasks] = useState<CollectionTask[]>([]);
@@ -53,12 +47,20 @@ export default function CollectPage() {
     email: string;
     name: string;
   } | null>(null);
+  const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
+  const [verificationImage, setVerificationImage] = useState<string | null>(
+    null
+  );
+  const [verificationStatus, setVerificationStatus] = useState<
+    "idle" | "verifying" | "success" | "failure"
+  >("idle");
+  
+  const [reward, setReward] = useState(0);
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
       setLoading(true);
       try {
-        // Fetch user
         const userEmail = localStorage.getItem("userEmail");
         if (userEmail) {
           const fetchedUser = await getUserByEmail(userEmail);
@@ -72,11 +74,8 @@ export default function CollectPage() {
           window.location.href = "/login";
           return;
         }
-
-        // Fetch tasks
         const fetchedTasks = await getWasteCollectionTasks();
         setTasks(fetchedTasks);
-        // setTasks(fetchedTasks as CollectionTask[]);
       } catch (error) {
         console.error("Error fetching user and tasks:", error);
         toast.error("Failed to load user data and tasks. Please try again.");
@@ -84,23 +83,8 @@ export default function CollectPage() {
         setLoading(false);
       }
     };
-
     fetchUserAndTasks();
   }, []);
-
-  const [selectedTask, setSelectedTask] = useState<CollectionTask | null>(null);
-  const [verificationImage, setVerificationImage] = useState<string | null>(
-    null
-  );
-  const [verificationStatus, setVerificationStatus] = useState<
-    "idle" | "verifying" | "success" | "failure"
-  >("idle");
-  const [verificationResult, setVerificationResult] = useState<{
-    wasteTypeMatch: boolean;
-    quantityMatch: boolean;
-    confidence: number;
-  } | null>(null);
-  const [reward, setReward] = useState<number | null>(null);
 
   const handleStatusChange = async (
     taskId: number,
@@ -110,7 +94,6 @@ export default function CollectPage() {
       toast.error("Please log in to collect waste.");
       return;
     }
-
     try {
       const updatedTask = await updateTaskStatus(taskId, newStatus, user.id);
       if (updatedTask) {
@@ -147,27 +130,20 @@ export default function CollectPage() {
       toast.error("Missing required information for verification.");
       return;
     }
-
     try {
+      setVerificationStatus("verifying");
       await handleStatusChange(selectedTask.id, "verified");
       const earnedReward = Math.floor(Math.random() * 50) + 10;
-
       await saveReward(user.id, earnedReward);
-
-      // Save the collected waste
       await saveCollectedWaste(selectedTask.id, user.id, {
         wasteTypeMatch: true,
         quantityMatch: true,
         confidence: 1,
       });
-
       setReward(earnedReward);
+      setVerificationStatus("success");
       toast.success(
-        `Verification successful! You earned ${earnedReward} tokens!`,
-        {
-          duration: 5000,
-          position: "top-center",
-        }
+        `Verification successful! You earned ${earnedReward} tokens!`
       );
     } catch (error) {
       console.error("Error verifying waste:", error);
@@ -178,7 +154,6 @@ export default function CollectPage() {
   const filteredTasks = tasks.filter((task) =>
     task.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   const pageCount = Math.ceil(filteredTasks.length / ITEMS_PER_PAGE);
   const paginatedTasks = filteredTasks.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
@@ -190,7 +165,6 @@ export default function CollectPage() {
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
         Waste Collection Tasks
       </h1>
-
       <div className="mb-4 flex items-center">
         <Input
           type="text"
@@ -203,7 +177,6 @@ export default function CollectPage() {
           <Search className="h-4 w-4" />
         </Button>
       </div>
-
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <Loader className="animate-spin h-8 w-8 text-gray-500" />
@@ -285,7 +258,6 @@ export default function CollectPage() {
               </div>
             ))}
           </div>
-
           <div className="mt-4 flex justify-center">
             <Button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -309,7 +281,6 @@ export default function CollectPage() {
           </div>
         </>
       )}
-
       {selectedTask && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -351,11 +322,13 @@ export default function CollectPage() {
               </div>
             </div>
             {verificationImage && (
-              <img
-                src={verificationImage}
-                alt="Verification"
-                className="mb-4 rounded-md w-full"
-              />
+              <div className="relative w-full mb-4">
+                <img
+                  src={verificationImage}
+                  alt="Verification"
+                  className="mb-4 rounded-md w-full"
+                />
+              </div>
             )}
             <Button
               onClick={handleVerify}
@@ -373,20 +346,9 @@ export default function CollectPage() {
                 "Verify Collection"
               )}
             </Button>
-            {verificationStatus === "success" && verificationResult && (
+            {verificationStatus === "success" && (
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
-                <p>
-                  Waste Type Match:{" "}
-                  {verificationResult.wasteTypeMatch ? "Yes" : "No"}
-                </p>
-                <p>
-                  Quantity Match:{" "}
-                  {verificationResult.quantityMatch ? "Yes" : "No"}
-                </p>
-                <p>
-                  Confidence: {(verificationResult.confidence * 100).toFixed(2)}
-                  %
-                </p>
+                <p>Verification Successful! Earned Reward: {reward} Tokens</p>
               </div>
             )}
             {verificationStatus === "failure" && (
@@ -404,13 +366,6 @@ export default function CollectPage() {
           </div>
         </div>
       )}
-
-      {/* Add a conditional render to show user info or login prompt */}
-      {/* {user ? (
-        <p className="text-sm text-gray-600 mb-4">Logged in as: {user.name}</p>
-      ) : (
-        <p className="text-sm text-red-600 mb-4">Please log in to collect waste and earn rewards.</p>
-      )} */}
     </div>
   );
 }

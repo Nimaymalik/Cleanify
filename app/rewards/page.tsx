@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import {
   Coins,
@@ -61,21 +62,24 @@ export default function RewardsPage() {
           const fetchedUser = await getUserByEmail(userEmail);
           if (fetchedUser) {
             setUser(fetchedUser);
+
             const fetchedTransactions = await getRewardTransactions(
               fetchedUser.id
             );
             setTransactions(fetchedTransactions as Transaction[]);
+
             const fetchedRewards = await getAvailableRewards(fetchedUser.id);
-            setRewards(fetchedRewards.filter((r) => r.cost > 0)); // Filter out rewards with 0 points
+            setRewards(fetchedRewards.filter((r) => r.cost > 0));
+
             const calculatedBalance = fetchedTransactions.reduce(
-              (acc, transaction) => {
-                return transaction.type.startsWith("earned")
+              (acc, transaction) =>
+                transaction.type.startsWith("earned")
                   ? acc + transaction.amount
-                  : acc - transaction.amount;
-              },
+                  : acc - transaction.amount,
               0
             );
-            setBalance(Math.max(calculatedBalance, 0)); // Ensure balance is never negative
+
+            setBalance(Math.max(calculatedBalance, 0));
           } else {
             toast.error("User not found. Please log in again.");
           }
@@ -102,10 +106,8 @@ export default function RewardsPage() {
     const reward = rewards.find((r) => r.id === rewardId);
     if (reward && balance >= reward.cost && reward.cost > 0) {
       try {
-        // Update database
         await redeemReward(user.id, rewardId);
 
-        // Create a new transaction record
         await createTransaction(
           user.id,
           "redeemed",
@@ -113,7 +115,6 @@ export default function RewardsPage() {
           `Redeemed ${reward.name}`
         );
 
-        // Refresh user data and rewards after redemption
         await refreshUserData();
 
         toast.success(`You have successfully redeemed: ${reward.name}`);
@@ -134,10 +135,8 @@ export default function RewardsPage() {
 
     if (balance > 0) {
       try {
-        // Update database
         await redeemReward(user.id, 0);
 
-        // Create a new transaction record
         await createTransaction(
           user.id,
           "redeemed",
@@ -145,10 +144,9 @@ export default function RewardsPage() {
           "Redeemed all points"
         );
 
-        // Refresh user data and rewards after redemption
         await refreshUserData();
 
-        toast.success(`You have successfully redeemed all your points!`);
+        toast.success("You have successfully redeemed all your points!");
       } catch (error) {
         console.error("Error redeeming all points:", error);
         toast.error("Failed to redeem all points. Please try again.");
@@ -162,21 +160,23 @@ export default function RewardsPage() {
     if (user) {
       const fetchedUser = await getUserByEmail(user.email);
       if (fetchedUser) {
-        const fetchedTransactions = await getRewardTransactions(fetchedUser.id);
+        const fetchedTransactions = await getRewardTransactions(
+          fetchedUser.id
+        );
         setTransactions(fetchedTransactions as Transaction[]);
-        const fetchedRewards = await getAvailableRewards(fetchedUser.id);
-        setRewards(fetchedRewards.filter((r) => r.cost > 0)); // Filter out rewards with 0 points
 
-        // Recalculate balance
+        const fetchedRewards = await getAvailableRewards(fetchedUser.id);
+        setRewards(fetchedRewards.filter((r) => r.cost > 0));
+
         const calculatedBalance = fetchedTransactions.reduce(
-          (acc, transaction) => {
-            return transaction.type.startsWith("earned")
+          (acc, transaction) =>
+            transaction.type.startsWith("earned")
               ? acc + transaction.amount
-              : acc - transaction.amount;
-          },
+              : acc - transaction.amount,
           0
         );
-        setBalance(Math.max(calculatedBalance, 0)); // Ensure balance is never negative
+
+        setBalance(Math.max(calculatedBalance, 0));
       }
     }
   };
@@ -193,20 +193,21 @@ export default function RewardsPage() {
     <div className="p-8 max-w-4xl mx-auto">
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">Rewards</h1>
 
-      <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col justify-between h-full border-l-4 border-green-500 mb-8">
+      <div className="bg-white p-6 rounded-xl shadow-lg border-l-4 border-green-500 mb-8">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">
           Reward Balance
         </h2>
-        <div className="flex items-center justify-between mt-auto">
+        <div className="flex items-center justify-between">
           <div className="flex items-center">
             <Coins className="w-10 h-10 mr-3 text-green-500" />
             <div>
-              <span className="text-4xl font-bold text-green-500">
-                {balance}
-              </span>
+              <span className="text-4xl font-bold text-green-500">{balance}</span>
               <p className="text-sm text-gray-500">Available Points</p>
             </div>
           </div>
+          <Button onClick={handleRedeemAllPoints} disabled={balance === 0}>
+            Redeem All Points
+          </Button>
         </div>
       </div>
 
@@ -223,9 +224,9 @@ export default function RewardsPage() {
                   className="flex items-center justify-between p-4 border-b border-gray-200 last:border-b-0"
                 >
                   <div className="flex items-center">
-                    {transaction.type === "earned_report" ? (
+                    {transaction.type === TransactionType.EarnedReport ? (
                       <ArrowUpRight className="w-5 h-5 text-green-500 mr-3" />
-                    ) : transaction.type === "earned_collect" ? (
+                    ) : transaction.type === TransactionType.EarnedCollect ? (
                       <ArrowUpRight className="w-5 h-5 text-blue-500 mr-3" />
                     ) : (
                       <ArrowDownRight className="w-5 h-5 text-red-500 mr-3" />
@@ -234,9 +235,7 @@ export default function RewardsPage() {
                       <p className="font-medium text-gray-800">
                         {transaction.description}
                       </p>
-                      <p className="text-sm text-gray-500">
-                        {transaction.date}
-                      </p>
+                      <p className="text-sm text-gray-500">{transaction.date}</p>
                     </div>
                   </div>
                   <span
@@ -284,22 +283,15 @@ export default function RewardsPage() {
                   </p>
                   <Button
                     onClick={() => handleRedeemReward(reward.id)}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white"
                     disabled={balance < reward.cost}
                   >
-                    <Gift className="w-4 h-4 mr-2" />
-                    Redeem Reward
+                    Redeem
                   </Button>
                 </div>
               ))
             ) : (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md">
-                <div className="flex items-center">
-                  <AlertCircle className="h-6 w-6 text-yellow-400 mr-3" />
-                  <p className="text-yellow-700">
-                    No rewards available at the moment.
-                  </p>
-                </div>
+              <div className="p-4 text-center text-gray-500">
+                No rewards available
               </div>
             )}
           </div>
