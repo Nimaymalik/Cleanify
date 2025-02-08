@@ -50,9 +50,9 @@ const privateKeyProvider = new EthereumPrivateKeyProvider({
 });
 
 const web3auth = new Web3Auth({
-  clientId:
-    "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs",
-  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET, // Changed from SAPPHIRE_MAINNET to TESTNET
+  clientId: process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID_CLIENT_ID || "",
+  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET,
+  // redirectUrl:process.env.NEXT_PUBLIC_WEB3AUTH_REDIRECT_URL || " ",
   privateKeyProvider,
 });
 
