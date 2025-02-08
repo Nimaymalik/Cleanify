@@ -8,12 +8,22 @@ import Header from "../components/Header";
 import SideBar from "../components/Sidebar";
 import { getUserByEmail, getAvailableRewards } from "../utils/database/action";
 
-// Adjust the Reward type here if needed
+// Define the Reward type
 export type Reward = {
   id: number;
   name: string;
   cost: number;
   points?: number; // Optional if not all rewards include `points`
+  description: string | null;
+  collectionInfo: string;
+};
+
+// Define the response type for the getAvailableRewards function
+export type RewardResponse = {
+  id: number;
+  name: string;
+  cost: number;
+  points?: number;
   description: string | null;
   collectionInfo: string;
 };
@@ -37,9 +47,10 @@ export default function RootLayout({
         if (userEmail) {
           const user = await getUserByEmail(userEmail);
           if (user) {
-            const rewards = await getAvailableRewards(user.id);
-            // Ensure the data matches the Reward type
-            const formattedRewards: Reward[] = rewards.map((reward: any) => ({
+            const rewards: RewardResponse[] = await getAvailableRewards(user.id);
+
+            // Map the rewards response to the Reward type
+            const formattedRewards: Reward[] = rewards.map((reward) => ({
               id: reward.id,
               name: reward.name,
               cost: reward.cost,
@@ -47,6 +58,7 @@ export default function RootLayout({
               description: reward.description ?? null, // Ensure `description` is null if undefined
               collectionInfo: reward.collectionInfo,
             }));
+
             console.log("Fetched rewards:", formattedRewards);
           }
         }
