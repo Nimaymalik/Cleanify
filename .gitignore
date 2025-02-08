@@ -5,9 +5,11 @@
 /.pnp
 .pnp.js
 .yarn/install-state.gz
-
+outline.md
+legacy
 # testing
 /coverage
+.env
 
 # next.js
 /.next/
@@ -27,10 +29,11 @@ yarn-error.log*
 
 # local env files
 .env*.local
-
+.env
+./env
 # vercel
 .vercel
-
+secrete.txt
 # typescript
 *.tsbuildinfo
 next-env.d.ts
