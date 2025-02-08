@@ -34,7 +34,7 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 
-const clientId = "BIAyKqf1mBYdn4iWGh6HwMRAg3-tPBmC57ncTHrxtl5KnvdOZLRHm6zwe8mQjp1dBUkNSFMQ_tWv2DptcuvStQ0";
+const clientId = "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs";
 
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
@@ -53,7 +53,7 @@ const privateKeyProvider = new EthereumPrivateKeyProvider({
 
 const web3auth = new Web3Auth({
   clientId,
-  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET, 
+  web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET, // Changed from SAPPHIRE_MAINNET to TESTNET
   privateKeyProvider,
 });
 
