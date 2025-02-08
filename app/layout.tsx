@@ -1,11 +1,22 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import Header from "../components/Header";
 import SideBar from "../components/Sidebar";
-import { getUserByEmail, getAvailableRewards ,Reward} from "../utils/database/action";
+import { getUserByEmail, getAvailableRewards } from "../utils/database/action";
+
+// Adjust the Reward type here if needed
+export type Reward = {
+  id: number;
+  name: string;
+  cost: number;
+  points?: number; // Optional if not all rewards include `points`
+  description: string | null;
+  collectionInfo: string;
+};
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,8 +37,17 @@ export default function RootLayout({
         if (userEmail) {
           const user = await getUserByEmail(userEmail);
           if (user) {
-            const rewards: Reward[] = await getAvailableRewards(user.id); // Use typed rewards
-            console.log("Fetched rewards:", rewards);
+            const rewards = await getAvailableRewards(user.id);
+            // Ensure the data matches the Reward type
+            const formattedRewards: Reward[] = rewards.map((reward: any) => ({
+              id: reward.id,
+              name: reward.name,
+              cost: reward.cost,
+              points: reward.points || 0, // Default to 0 if points are missing
+              description: reward.description ?? null, // Ensure `description` is null if undefined
+              collectionInfo: reward.collectionInfo,
+            }));
+            console.log("Fetched rewards:", formattedRewards);
           }
         }
       } catch (error) {
