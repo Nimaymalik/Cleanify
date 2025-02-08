@@ -30,7 +30,7 @@ type Report = {
 
 export default function ReportPage() {
   const [user, setUser] = useState<User | null>(null);
-  const [reports] = useState<Array<Report>>([]);
+  const [reports, setReports] = useState<Array<Report>>([]);
   const [newReport, setNewReport] = useState({
     location: "",
     type: "",
@@ -68,22 +68,23 @@ export default function ReportPage() {
 
     setIsSubmitting(true);
     try {
-      const report: Report = await createReport(
-        user.id,
-        newReport.location,
-        newReport.type,
-        newReport.amount,
-        preview || undefined
-      );
+      const formattedReport = {
+        id: (
+          await createReport(
+            user.id,
+            newReport.location,
+            newReport.type,
+            newReport.amount,
+            preview || undefined
+          )
+        ).id,
+        location: newReport.location,
+        wasteType: newReport.type,
+        amount: newReport.amount,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
 
-      // const formattedReport = {
-      //   id: report.id,
-      //   location: report.location,
-      //   wasteType: report.wasteType,
-      //   amount: report.amount,
-      //   createdAt: report.createdAt.toISOString().split("T")[0],
-      // };
-      // console.log(formattedReport);
+      console.log(formattedReport);
 
       setNewReport({ location: "", type: "", amount: "" });
       setPreview(null);
@@ -102,22 +103,22 @@ export default function ReportPage() {
   useEffect(() => {
     const checkUser = async () => {
       const email = localStorage.getItem("userEmail");
-      if (email) {
-        let user = await getUserByEmail(email);
-        if (!user) {
-          user = await createUser(email, "Anonymous User");
-        }
-        setUser(user);
-
-        const recentReports = await getRecentReports();
-        const formattedReports = recentReports.map((report) => ({
-          ...report,
-          createdAt: report.createdAt.toISOString().split("T")[0],
-        }));
-        // setReports(formattedReports);
-      } else {
+      if (!email) {
         router.push("/login");
+        return;
       }
+      let user = await getUserByEmail(email);
+      if (!user) {
+        user = await createUser(email, "Anonymous User");
+      }
+      setUser(user);
+
+      const recentReports = await getRecentReports();
+      const formattedReports = recentReports.map((report) => ({
+        ...report,
+        createdAt: report.createdAt.toISOString().split("T")[0],
+      }));
+      setReports(formattedReports); // Ensure reports are updated here
     };
     checkUser();
   }, [router]);
@@ -182,7 +183,6 @@ export default function ReportPage() {
             >
               Location
             </label>
-
             <input
               type="text"
               id="location"
