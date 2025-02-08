@@ -9,13 +9,11 @@ import {
   Loader,
   Calendar,
   Weight,
-  Search,
 } from "lucide-react";
 
 import { toast } from "react-hot-toast";
 
 import { Button } from "../../components/ui/button";
-// import { Input } from "../../components/ui/input";
 import {
   getWasteCollectionTasks,
   updateTaskStatus,
@@ -40,7 +38,7 @@ export default function CollectPage() {
   const [tasks, setTasks] = useState<CollectionTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredWasteType, setHoveredWasteType] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [user, setUser] = useState<{
     id: number;

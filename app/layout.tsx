@@ -9,9 +9,12 @@ import { getUserByEmail, getAvailableRewards } from "../utils/database/action";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // const [totalEarnings, setTotalEarnings] = useState(0);
   const [loading, setLoading] = useState(false); // Loading state
   const [error, setError] = useState(false); // Error state
 
@@ -23,8 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         if (userEmail) {
           const user = await getUserByEmail(userEmail);
           if (user) {
-            const availableRewards = await getAvailableRewards(user.id) as any;
-            // setTotalEarnings(availableRewards); // Assuming `total` is the relevant field
+            (await getAvailableRewards(user.id)) as any;
           }
         }
       } catch (error) {
@@ -42,10 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={inter.className}>
         <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Header
-            onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+          <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
           <div className="flex flex-1">
-            <SideBar  />
+            <SideBar />
             <main className="flex-1 p-4 lg:p-8 ml-0 lg:ml-64 transition-all duration-300">
               {loading ? (
                 <div>Loading...</div> // Loading state

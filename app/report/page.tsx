@@ -83,8 +83,8 @@ export default function ReportPage() {
         amount: report.amount,
         createdAt: report.createdAt.toISOString().split("T")[0],
       };
+      console.log(formattedReport);
 
-      setReports([formattedReport, ...reports]);
       setNewReport({ location: "", type: "", amount: "" });
       setPreview(null);
 
