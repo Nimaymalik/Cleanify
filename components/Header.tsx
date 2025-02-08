@@ -34,8 +34,6 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { useMediaQuery } from "../hooks/useMediaQuery";
 
-const clientId = "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs";
-
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
   chainId: "0xaa36a7",
@@ -52,7 +50,8 @@ const privateKeyProvider = new EthereumPrivateKeyProvider({
 });
 
 const web3auth = new Web3Auth({
-  clientId,
+  clientId:
+    "BJKdDFkNtkWX87XqkuWrDu4rbkSvWyQZ5lswS0ucINxxcN0inRVW8zzKAywPPzgiOHP7_3PcfFwfpvcQvSdaLRs",
   web3AuthNetwork: WEB3AUTH_NETWORK.TESTNET, // Changed from SAPPHIRE_MAINNET to TESTNET
   privateKeyProvider,
 });
@@ -70,7 +69,10 @@ interface Notification {
 export default function Header({ onMenuClick }: HeaderProps) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [userInfo, setUserInfo] = useState<{ email?: string; name?: string } | null>(null);
+  const [userInfo, setUserInfo] = useState<{
+    email?: string;
+    name?: string;
+  } | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [balance, setBalance] = useState(0);
@@ -170,19 +172,30 @@ export default function Header({ onMenuClick }: HeaderProps) {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center">Loading Web3Auth...</div>;
+    return (
+      <div className="flex items-center justify-center">
+        Loading Web3Auth...
+      </div>
+    );
   }
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center">
-          <Button variant="ghost" size="icon" className="mr-2 md:mr-4" onClick={onMenuClick}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2 md:mr-4"
+            onClick={onMenuClick}
+          >
             <Menu className="h-6 w-6" />
           </Button>
           <Link href="/" className="flex items-center">
             <Leaf className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-1 md:mr-2" />
-            <span className="font-bold text-base md:text-lg text-gray-800">Cleanify</span>
+            <span className="font-bold text-base md:text-lg text-gray-800">
+              Cleanify
+            </span>
           </Link>
         </div>
 
@@ -226,7 +239,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   >
                     <div className="flex flex-col">
                       <span className="font-medium">{notification.type}</span>
-                      <span className="text-sm text-gray-500">{notification.message}</span>
+                      <span className="text-sm text-gray-500">
+                        {notification.message}
+                      </span>
                     </div>
                   </DropdownMenuItem>
                 ))
@@ -238,7 +253,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
           <div className="mr-2 md:mr-4 flex items-center bg-gray-100 rounded-full px-2 md:px-3 py-1">
             <Coins className="h-4 w-4 md:h-5 md:w-5 mr-1 text-green-500" />
-            <span className="font-semibold text-sm md:text-base text-gray-800">{balance.toFixed(2)}</span>
+            <span className="font-semibold text-sm md:text-base text-gray-800">
+              {balance.toFixed(2)}
+            </span>
           </div>
 
           {!loggedIn ? (
@@ -252,13 +269,19 @@ export default function Header({ onMenuClick }: HeaderProps) {
           ) : (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="flex items-center"
+                >
                   <User className="h-5 w-5 mr-1" />
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>{userInfo ? userInfo.name : "User Info"}</DropdownMenuItem>
+                <DropdownMenuItem>
+                  {userInfo ? userInfo.name : "User Info"}
+                </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Link href="/settings">Profile</Link>
                 </DropdownMenuItem>
