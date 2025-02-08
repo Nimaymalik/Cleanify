@@ -429,7 +429,7 @@ export async function getRewardTransactions(userId: number) {
 }
 
 export interface Reward {
-  id: string;
+  id: number;
   name: string;
   points: number; // Example fields
 }

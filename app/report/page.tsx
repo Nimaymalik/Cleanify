@@ -76,14 +76,14 @@ export default function ReportPage() {
         preview || undefined
       );
 
-      const formattedReport = {
-        id: report.id,
-        location: report.location,
-        wasteType: report.wasteType,
-        amount: report.amount,
-        createdAt: report.createdAt.toISOString().split("T")[0],
-      };
-      console.log(formattedReport);
+      // const formattedReport = {
+      //   id: report.id,
+      //   location: report.location,
+      //   wasteType: report.wasteType,
+      //   amount: report.amount,
+      //   createdAt: report.createdAt.toISOString().split("T")[0],
+      // };
+      // console.log(formattedReport);
 
       setNewReport({ location: "", type: "", amount: "" });
       setPreview(null);
