@@ -25,7 +25,7 @@ type Report = {
   location: string;
   wasteType: string;
   amount: string;
-  createdAt: Date;
+  createdAt: Date; // Ensure this remains a Date object
 };
 
 export default function ReportPage() {
@@ -123,7 +123,7 @@ export default function ReportPage() {
       const recentReports = await getRecentReports();
       const formattedReports = recentReports.map((report) => ({
         ...report,
-        createdAt: report.createdAt.toISOString().split("T")[0],
+        createdAt: new Date(report.createdAt), // Parse createdAt into a Date object
       }));
       setReports(formattedReports); // Ensure reports are updated here
     };
@@ -289,7 +289,7 @@ export default function ReportPage() {
                     {report.amount}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(report.createdAt).toLocaleDateString()}
+                    {report.createdAt.toLocaleDateString()}
                   </td>
                 </tr>
               ))}
