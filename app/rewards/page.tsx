@@ -76,7 +76,11 @@ export default function RewardsPage() {
             setTransactions(fetchedTransactions as Transaction[]);
 
             const fetchedRewards = await getAvailableRewards(fetchedUser.id);
-            setRewards(fetchedRewards.filter((r) => r.cost > 0));
+            setRewards(
+              fetchedRewards
+                .filter((r) => r.cost > 0)
+                .map((r) => ({ ...r, description: r.description ?? "" }))
+            );
 
             const calculatedBalance = fetchedTransactions.reduce(
               (acc, transaction) =>
@@ -171,7 +175,11 @@ export default function RewardsPage() {
       setTransactions(fetchedTransactions as Transaction[]);
 
       const fetchedRewards = await getAvailableRewards(dbUser.id);
-      setRewards(fetchedRewards.filter((r) => r.cost > 0));
+      setRewards(
+        fetchedRewards
+          .filter((r) => r.cost > 0)
+          .map((r) => ({ ...r, description: r.description ?? "" }))
+      );
 
       const calculatedBalance = fetchedTransactions.reduce(
         (acc, transaction) =>
@@ -293,7 +301,6 @@ export default function RewardsPage() {
             )}
           </div>
         </div>
-
         <div>
           <h2 className="text-2xl font-semibold mb-4 text-gray-800">
             Available Rewards

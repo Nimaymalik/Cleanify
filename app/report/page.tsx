@@ -80,11 +80,20 @@ export default function ReportPage() {
         newReport.location,
         newReport.type,
         newReport.amount,
-        preview
+        preview ?? undefined
       );
 
       if (report) {
-        setReports([report, ...reports]);
+        const formattedReport = {
+          id: report.id,
+          location: report.location,
+          type: report.wasteType,
+          amount: report.amount,
+          imageUrl: report.imageUrl ?? null,
+          createdAt: new Date(report.createdAt),
+          userId: report.userId,
+        };
+        setReports([formattedReport, ...reports]);
         setNewReport({ location: "", type: "", amount: "" });
         setPreview(null);
         toast.success("Report submitted successfully!");
@@ -124,9 +133,10 @@ export default function ReportPage() {
       const recentReports = await getRecentReports();
       const formattedReports = recentReports.map((report) => ({
         ...report,
-        createdAt: new Date(report.createdAt), // Parse createdAt into a Date object
+        type: report.wasteType,
+        createdAt: new Date(report.createdAt),
       }));
-      setReports(formattedReports); // Ensure reports are updated here
+      setReports(formattedReports);
     };
     checkUser();
   }, [user, isSignedIn, isLoaded]);

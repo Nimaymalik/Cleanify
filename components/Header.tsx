@@ -3,12 +3,12 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Menu,
-  Coins,
-  Leaf,
   Bell,
   User,
   ChevronDown,
   LogIn,
+  Leaf,
+  Coins,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -17,7 +17,6 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { SignIn, useUser, useClerk } from "@clerk/nextjs";
-import { useMediaQuery } from "../hooks/useMediaQuery";
 import { usePathname } from "next/navigation";
 import {
   createUser,

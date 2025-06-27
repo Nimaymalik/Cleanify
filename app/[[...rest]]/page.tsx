@@ -33,7 +33,7 @@ function AnimatedGlobe() {
 }
 
 export default function Home() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn } = useUser();
   const [impactData, setImpactData] = useState({
     wasteCollected: 0,
     reportsSubmitted: 0,

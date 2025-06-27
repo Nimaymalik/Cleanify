@@ -10,11 +10,8 @@ import {
   Calendar,
   Weight,
 } from "lucide-react";
-
-import { toast } from "react-hot-toast";
-import { useUser } from "@clerk/nextjs";
-
 import { Button } from "../../components/ui/button";
+import { useUser } from "@clerk/nextjs";
 import {
   getWasteCollectionTasks,
   updateTaskStatus,
@@ -22,6 +19,8 @@ import {
   saveCollectedWaste,
   getUserByEmail,
 } from "../../utils/database/action";
+import Image from "next/image";
+import { toast } from "react-hot-toast";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -339,9 +338,11 @@ export default function CollectPage() {
             </div>
             {verificationImage && (
               <div className="relative w-full mb-4">
-                <img
+                <Image
                   src={verificationImage}
                   alt="Verification"
+                  width={300}
+                  height={300}
                   className="mb-4 rounded-md w-full"
                 />
               </div>
