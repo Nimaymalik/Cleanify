@@ -8,8 +8,9 @@ import {
   Coins,
   MapPin,
 } from "lucide-react";
-import { getAllRewards, getRecentReports, getWasteCollectionTasks } from "../utils/database/action";
-import { Button } from "../components/ui/button";
+import { useUser } from "@clerk/nextjs";
+import { getAllRewards, getRecentReports, getWasteCollectionTasks } from "../../utils/database/action";
+import { Button } from "../../components/ui/button";
 import { Poppins } from "next/font/google";
 import Link from "next/link";
 
@@ -32,7 +33,7 @@ function AnimatedGlobe() {
 }
 
 export default function Home() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const { isSignedIn, isLoaded } = useUser();
   const [impactData, setImpactData] = useState({
     wasteCollected: 0,
     reportsSubmitted: 0,
@@ -81,29 +82,24 @@ export default function Home() {
     fetchImpactData();
   }, []);
 
-  const login = () => {
-    setLoggedIn(true);
-  };
-
   return (
-    <div className={`container mx-auto px-4 py-16 ${poppins.className}`}>
-      <section className="text-center mb-20">
+    <div className={`container mx-auto px-2 sm:px-4 py-8 sm:py-12 md:py-16 ${poppins.className}`}>
+      <section className="flex flex-col items-center justify-center min-h-[60vh] text-center mb-12 sm:mb-16 md:mb-20">
         <AnimatedGlobe />
-        <h1 className="text-6xl font-bold mb-6 text-gray-800 tracking-tight">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-4 sm:mb-6 text-gray-800 tracking-tight">
           <span className="text-green-600">Waste Management</span>
         </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-8">
+        <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-8">
           Join our community in making waste management more efficient and
           rewarding!
         </p>
-        {!loggedIn ? (
-          <Button
-            onClick={login}
-            className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 px-10 rounded-full font-medium transition-all duration-300 ease-in-out transform hover:scale-105"
-          >
-            Get Started
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+        {!isSignedIn ? (
+          <Link href="#login">
+            <Button className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 px-10 rounded-full font-medium transition-all duration-300 ease-in-out transform hover:scale-105">
+              Get Started
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         ) : (
           <Link href="/report">
             <Button className="bg-green-600 hover:bg-green-700 text-white text-lg py-6 px-10 rounded-full font-medium transition-all duration-300 ease-in-out transform hover:scale-105">
@@ -114,7 +110,7 @@ export default function Home() {
         )}
       </section>
 
-      <section className="grid md:grid-cols-3 gap-10 mb-20">
+      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 md:gap-10 mb-12 sm:mb-16 md:mb-20">
         <FeatureCard
           icon={Leaf}
           title="Eco-Friendly"
@@ -132,11 +128,11 @@ export default function Home() {
         />
       </section>
 
-      <section className="bg-white p-10 rounded-3xl shadow-lg mb-20">
-        <h2 className="text-4xl font-bold mb-12 text-center text-gray-800">
+      <section className="bg-white p-4 sm:p-8 md:p-10 rounded-2xl md:rounded-3xl shadow-lg mb-12 sm:mb-16 md:mb-20">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8 sm:mb-10 md:mb-12 text-center text-gray-800">
           Our Impact
         </h2>
-        <div className="grid md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
           <ImpactCard
             title="Waste Collected"
             value={`${impactData.wasteCollected} kg`}

@@ -68,3 +68,143 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* === Custom Header and Sidebar Styles Restoration === */
+
+.nav-link {
+  @apply text-gray-700 font-medium px-3 py-2 rounded-md transition-colors duration-200 hover:bg-green-50 hover:text-green-700;
+}
+
+.nav-link.active, .nav-link[aria-current="page"] {
+  @apply bg-green-100 text-green-800;
+}
+
+/* Responsive Header Styles */
+.header-responsive {
+  @apply bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50;
+}
+
+.header-container {
+  @apply max-w-7xl mx-auto px-2 sm:px-4 lg:px-8;
+}
+
+.header-content {
+  @apply flex flex-wrap justify-between items-center h-auto min-h-16 gap-y-2;
+}
+
+.header-left {
+  @apply flex items-center w-full sm:w-auto justify-between;
+}
+
+.header-center {
+  @apply hidden md:flex flex-wrap space-x-4 md:space-x-8 w-full md:w-auto justify-center md:justify-start;
+}
+
+.header-right {
+  @apply flex items-center space-x-2 sm:space-x-4;
+}
+
+/* Sidebar custom styles - Fully Responsive */
+.sidebar-custom {
+  @apply bg-white border-r border-gray-200 text-gray-800 w-64 max-w-full fixed top-0 left-0 h-screen z-30;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  height: 100vh !important;
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-custom.open {
+  transform: translateX(0);
+}
+
+/* Mobile Styles (up to 640px) */
+@media (max-width: 639px) {
+  .sidebar-custom {
+    width: 280px;
+    max-width: 85vw;
+  }
+  
+  .header-content {
+    @apply min-h-14;
+  }
+  
+  .header-left {
+    @apply w-full justify-between;
+  }
+  
+  .header-center {
+    @apply hidden;
+  }
+  
+  .header-right {
+    @apply space-x-1;
+  }
+}
+
+/* Small Tablet Styles (640px - 767px) */
+@media (min-width: 640px) and (max-width: 767px) {
+  .sidebar-custom {
+    width: 300px;
+  }
+  
+  .header-content {
+    @apply min-h-16;
+  }
+  
+  .header-center {
+    @apply hidden;
+  }
+}
+
+/* Tablet Styles (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .sidebar-custom {
+    width: 280px;
+  }
+  
+  .header-center {
+    @apply flex space-x-6;
+  }
+  
+  .header-right {
+    @apply space-x-3;
+  }
+}
+
+/* Desktop Styles (1024px and up) */
+@media (min-width: 1024px) {
+  .sidebar-custom {
+    transform: translateX(0);
+    position: fixed !important;
+    left: 0 !important;
+  }
+  
+  .header-center {
+    @apply flex space-x-8;
+  }
+  
+  .header-right {
+    @apply space-x-4;
+  }
+}
+
+/* Large Desktop Styles (1280px and up) */
+@media (min-width: 1280px) {
+  .header-container {
+    @apply px-8;
+  }
+  
+  .header-center {
+    @apply space-x-10;
+  }
+}
+
+/* Extra Large Desktop Styles (1536px and up) */
+@media (min-width: 1536px) {
+  .header-container {
+    @apply px-12;
+  }
+}

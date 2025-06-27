@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Upload, Loader } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 
 import {
   createReport,
@@ -23,13 +23,16 @@ type User = {
 type Report = {
   id: number;
   location: string;
-  wasteType: string;
+  type: string;
   amount: string;
-  createdAt: Date; // Ensure this remains a Date object
+  imageUrl: string | null;
+  createdAt: Date;
+  userId: number;
 };
 
 export default function ReportPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isSignedIn, isLoaded } = useUser();
+  const [dbUser, setDbUser] = useState<User | null>(null);
   const [reports, setReports] = useState<Array<Report>>([]);
   const [newReport, setNewReport] = useState({
     location: "",
@@ -38,7 +41,6 @@ export default function ReportPage() {
   });
   const [preview, setPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const router = useRouter();
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -60,45 +62,35 @@ export default function ReportPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!dbUser) {
+      toast.error("Please log in to submit a report.");
+      return;
+    }
 
-    if (!user) {
-      toast.error("Please log in before submitting a report.");
+    if (!newReport.location || !newReport.type || !newReport.amount) {
+      toast.error("Please fill in all fields.");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Call createReport and ensure it returns an object with an `id` property
-      const response = await createReport(
-        user.id,
+      const report = await createReport(
+        dbUser.id,
         newReport.location,
         newReport.type,
         newReport.amount,
-        preview || undefined
+        preview
       );
 
-      if (!response || !response.id) {
-        throw new Error("Failed to create report. Response is invalid.");
+      if (report) {
+        setReports([report, ...reports]);
+        setNewReport({ location: "", type: "", amount: "" });
+        setPreview(null);
+        toast.success("Report submitted successfully!");
+        window.location.reload();
+      } else {
+        toast.error("Failed to submit report. Please try again.");
       }
-
-      const formattedReport: Report = {
-        id: response.id,
-        location: newReport.location,
-        wasteType: newReport.type,
-        amount: newReport.amount,
-        createdAt: new Date(), // Use the current date
-      };
-
-      // Add the new report to the list of reports
-      setReports((prevReports) => [formattedReport, ...prevReports]);
-
-      // Reset the form
-      setNewReport({ location: "", type: "", amount: "" });
-      setPreview(null);
-
-      toast.success(
-        `Report submitted successfully! You've earned points for reporting waste.`
-      );
     } catch (error) {
       console.error("Error submitting report:", error);
       toast.error("Failed to submit report. Please try again.");
@@ -109,16 +101,24 @@ export default function ReportPage() {
 
   useEffect(() => {
     const checkUser = async () => {
-      const email = localStorage.getItem("userEmail");
-      if (!email) {
-        router.push("/login");
+      if (!isLoaded) return;
+      
+      if (!isSignedIn) {
+        toast.error("Please log in to access this page.");
         return;
       }
-      let user = await getUserByEmail(email);
-      if (!user) {
-        user = await createUser(email, "Anonymous User");
+
+      const userEmail = user?.emailAddresses?.[0]?.emailAddress;
+      if (!userEmail) {
+        toast.error("User email not available. Please log in again.");
+        return;
       }
-      setUser(user);
+
+      let fetchedUser = await getUserByEmail(userEmail);
+      if (!fetchedUser) {
+        fetchedUser = await createUser(userEmail, user?.fullName || "Anonymous User");
+      }
+      setDbUser(fetchedUser);
 
       const recentReports = await getRecentReports();
       const formattedReports = recentReports.map((report) => ({
@@ -128,7 +128,30 @@ export default function ReportPage() {
       setReports(formattedReports); // Ensure reports are updated here
     };
     checkUser();
-  }, [router]);
+  }, [user, isSignedIn, isLoaded]);
+
+  if (!isLoaded) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="animate-spin h-8 w-8 text-gray-500" />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold mb-6 text-gray-800">
+            Please Log In
+          </h1>
+          <p className="text-gray-600">
+            You need to be logged in to submit waste reports.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -136,175 +159,148 @@ export default function ReportPage() {
         Report waste
       </h1>
 
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-lg mb-12"
-      >
-        <div className="mb-8">
-          <label
-            htmlFor="waste-image"
-            className="block text-lg font-medium text-gray-700 mb-2"
-          >
-            Upload Waste Image
-          </label>
-          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:border-green-500 transition-colors duration-300">
-            <div className="space-y-1 text-center">
-              <Upload className="mx-auto h-12 w-12 text-gray-400" />
-              <div className="flex text-sm text-gray-600">
-                <label
-                  htmlFor="waste-image"
-                  className="relative cursor-pointer bg-white rounded-md font-medium text-green-600 hover:text-green-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-green-500"
-                >
-                  <span>Upload a file</span>
-                  <input
-                    id="waste-image"
-                    name="waste-image"
-                    type="file"
-                    className="sr-only"
-                    onChange={handleFileChange}
-                    accept="image/*"
-                  />
-                </label>
-                <p className="pl-1">or drag and drop</p>
-              </div>
-              <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+      <div className="grid md:grid-cols-2 gap-8">
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Submit New Report
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Location
+              </label>
+              <input
+                type="text"
+                name="location"
+                value={newReport.location}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                placeholder="Enter location"
+              />
             </div>
-          </div>
-        </div>
 
-        {preview && (
-          <div className="mt-4 mb-8">
-            <img
-              src={preview}
-              alt="Waste preview"
-              className="max-w-full h-auto rounded-xl shadow-md"
-            />
-          </div>
-        )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Waste Type
+              </label>
+              <select
+                name="type"
+                value={newReport.type}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="">Select waste type</option>
+                <option value="plastic">Plastic</option>
+                <option value="paper">Paper</option>
+                <option value="glass">Glass</option>
+                <option value="metal">Metal</option>
+                <option value="organic">Organic</option>
+                <option value="electronic">Electronic</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-          <div>
-            <label
-              htmlFor="location"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Location
-            </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={newReport.location}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 bg-gray-100"
-              placeholder="Enter waste location"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="type"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Waste Type
-            </label>
-            <input
-              type="text"
-              id="type"
-              name="type"
-              value={newReport.type}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 bg-gray-100"
-              placeholder="Enter waste type"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="amount"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Estimated Amount
-            </label>
-            <input
-              type="text"
-              id="amount"
-              name="amount"
-              value={newReport.amount}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-300 bg-gray-100"
-              placeholder="Enter amount"
-            />
-          </div>
-        </div>
-        <Button
-          type="submit"
-          className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-lg rounded-xl transition-colors duration-300 flex items-center justify-center"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Report"
-          )}
-        </Button>
-      </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Amount
+              </label>
+              <input
+                type="text"
+                name="amount"
+                value={newReport.amount}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                placeholder="e.g., 2.5 kg"
+              />
+            </div>
 
-      <h2 className="text-3xl font-semibold mb-6 text-gray-800">
-        Recent Reports
-      </h2>
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="max-h-96 overflow-y-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 sticky top-0">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {reports.map((report) => (
-                <tr key={report.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.location}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.wasteType}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.amount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {report.createdAt.toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-              {reports.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-6 py-4 text-center text-sm text-gray-500"
-                  >
-                    No reports available.
-                  </td>
-                </tr>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Upload Image
+              </label>
+              <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <label
+                  htmlFor="image-upload"
+                  className="cursor-pointer flex flex-col items-center"
+                >
+                  <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                  <span className="text-sm text-gray-600">
+                    Click to upload image
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            {preview && (
+              <div className="mt-4">
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="w-full h-32 object-cover rounded-md"
+                />
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader className="animate-spin -ml-1 mr-3 h-5 w-5" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit Report"
               )}
-            </tbody>
-          </table>
+            </Button>
+          </form>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-lg">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">
+            Recent Reports
+          </h2>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            {reports.length > 0 ? (
+              reports.map((report) => (
+                <div
+                  key={report.id}
+                  className="border border-gray-200 rounded-lg p-4"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-gray-800">
+                      {report.location}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {report.createdAt.toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <p>Type: {report.type}</p>
+                    <p>Amount: {report.amount}</p>
+                  </div>
+                  {report.imageUrl && (
+                    <img
+                      src={report.imageUrl}
+                      alt="Report"
+                      className="w-full h-20 object-cover rounded-md mt-2"
+                    />
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-center">No reports yet</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

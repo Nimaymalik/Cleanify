@@ -132,10 +132,24 @@ export async function getOrCreateReward(userId: number) {
 
 export async function updateRewardPoints(userId: number, pointsToAdd: number) {
   try {
+    // Ensure a Rewards row exists for this user
+    await getOrCreateReward(userId);
+
+    // Get the current points for the user
+    const [currentReward] = await db
+      .select()
+      .from(Rewards)
+      .where(eq(Rewards.userId, userId))
+      .execute();
+    const currentPoints = currentReward ? currentReward.points : 0;
+    const newPoints = currentPoints + pointsToAdd;
+    const newLevel = Math.floor(newPoints / 1000) + 1;
+
     const [updatedReward] = await db
       .update(Rewards)
       .set({
-        points: sql`${Rewards.points} + ${pointsToAdd}`,
+        points: newPoints,
+        level: newLevel,
         updatedAt: new Date(),
       })
       .where(eq(Rewards.userId, userId))

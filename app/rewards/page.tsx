@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { toast } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "../../components/ui/button";
 import {
   getUserByEmail,
@@ -36,12 +37,13 @@ type Reward = {
   id: number;
   name: string;
   cost: number;
-  description: string | null;
+  description: string;
   collectionInfo: string;
 };
 
 export default function RewardsPage() {
-  const [user, setUser] = useState<{
+  const { user, isSignedIn, isLoaded } = useUser();
+  const [dbUser, setDbUser] = useState<{
     id: number;
     email: string;
     name: string;
@@ -53,13 +55,20 @@ export default function RewardsPage() {
 
   useEffect(() => {
     const fetchUserDataAndRewards = async () => {
+      if (!isLoaded) return;
+      
+      if (!isSignedIn) {
+        toast.error("Please log in to access rewards.");
+        return;
+      }
+
       setLoading(true);
       try {
-        const userEmail = localStorage.getItem("userEmail");
+        const userEmail = user?.emailAddresses?.[0]?.emailAddress;
         if (userEmail) {
           const fetchedUser = await getUserByEmail(userEmail);
           if (fetchedUser) {
-            setUser(fetchedUser);
+            setDbUser(fetchedUser);
 
             const fetchedTransactions = await getRewardTransactions(
               fetchedUser.id
@@ -82,7 +91,7 @@ export default function RewardsPage() {
             toast.error("User not found. Please log in again.");
           }
         } else {
-          toast.error("User not logged in. Please log in.");
+          toast.error("User email not available. Please log in again.");
         }
       } catch (error) {
         console.error("Error fetching user data and rewards:", error);
@@ -93,10 +102,10 @@ export default function RewardsPage() {
     };
 
     fetchUserDataAndRewards();
-  }, []);
+  }, [user, isSignedIn, isLoaded]);
 
   const handleRedeemReward = async (rewardId: number) => {
-    if (!user) {
+    if (!dbUser) {
       toast.error("Please log in to redeem rewards.");
       return;
     }
@@ -104,10 +113,10 @@ export default function RewardsPage() {
     const reward = rewards.find((r) => r.id === rewardId);
     if (reward && balance >= reward.cost && reward.cost > 0) {
       try {
-        await redeemReward(user.id, rewardId);
+        await redeemReward(dbUser.id, rewardId);
 
         await createTransaction(
-          user.id,
+          dbUser.id,
           "redeemed",
           reward.cost,
           `Redeemed ${reward.name}`
@@ -126,17 +135,17 @@ export default function RewardsPage() {
   };
 
   const handleRedeemAllPoints = async () => {
-    if (!user) {
+    if (!dbUser) {
       toast.error("Please log in to redeem points.");
       return;
     }
 
     if (balance > 0) {
       try {
-        await redeemReward(user.id, 0);
+        await redeemReward(dbUser.id, 0);
 
         await createTransaction(
-          user.id,
+          dbUser.id,
           "redeemed",
           balance,
           "Redeemed all points"
@@ -155,34 +164,58 @@ export default function RewardsPage() {
   };
 
   const refreshUserData = async () => {
-    if (user) {
-      const fetchedUser = await getUserByEmail(user.email);
-      if (fetchedUser) {
-        const fetchedTransactions = await getRewardTransactions(
-          fetchedUser.id
-        );
-        setTransactions(fetchedTransactions as Transaction[]);
+    if (!dbUser) return;
 
-        const fetchedRewards = await getAvailableRewards(fetchedUser.id);
-        setRewards(fetchedRewards.filter((r) => r.cost > 0));
+    try {
+      const fetchedTransactions = await getRewardTransactions(dbUser.id);
+      setTransactions(fetchedTransactions as Transaction[]);
 
-        const calculatedBalance = fetchedTransactions.reduce(
-          (acc, transaction) =>
-            transaction.type.startsWith("earned")
-              ? acc + transaction.amount
-              : acc - transaction.amount,
-          0
-        );
+      const fetchedRewards = await getAvailableRewards(dbUser.id);
+      setRewards(fetchedRewards.filter((r) => r.cost > 0));
 
-        setBalance(Math.max(calculatedBalance, 0));
-      }
+      const calculatedBalance = fetchedTransactions.reduce(
+        (acc, transaction) =>
+          transaction.type.startsWith("earned")
+            ? acc + transaction.amount
+            : acc - transaction.amount,
+        0
+      );
+
+      setBalance(Math.max(calculatedBalance, 0));
+    } catch (error) {
+      console.error("Error refreshing user data:", error);
     }
   };
 
-  if (loading) {
+  if (!isLoaded) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader className="animate-spin h-8 w-8 text-gray-600" />
+        <Loader className="animate-spin h-8 w-8 text-gray-500" />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold mb-6 text-gray-800">
+            Please Log In
+          </h1>
+          <p className="text-gray-600">
+            You need to be logged in to access your rewards.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="flex justify-center items-center h-64">
+          <Loader className="animate-spin h-8 w-8 text-gray-500" />
+        </div>
       </div>
     );
   }
@@ -212,40 +245,45 @@ export default function RewardsPage() {
       <div className="grid md:grid-cols-2 gap-8">
         <div>
           <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-            Recent Transactions
+            Transaction History
           </h2>
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="space-y-4">
             {transactions.length > 0 ? (
               transactions.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="flex items-center justify-between p-4 border-b border-gray-200 last:border-b-0"
+                  className="bg-white p-4 rounded-xl shadow-md"
                 >
-                  <div className="flex items-center">
-                    {transaction.type === TransactionType.EarnedReport ? (
-                      <ArrowUpRight className="w-5 h-5 text-green-500 mr-3" />
-                    ) : transaction.type === TransactionType.EarnedCollect ? (
-                      <ArrowUpRight className="w-5 h-5 text-blue-500 mr-3" />
-                    ) : (
-                      <ArrowDownRight className="w-5 h-5 text-red-500 mr-3" />
-                    )}
-                    <div>
-                      <p className="font-medium text-gray-800">
-                        {transaction.description}
-                      </p>
-                      <p className="text-sm text-gray-500">{transaction.date}</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center">
+                      {transaction.type.startsWith("earned") ? (
+                        <ArrowUpRight className="w-5 h-5 text-green-500 mr-2" />
+                      ) : (
+                        <ArrowDownRight className="w-5 h-5 text-red-500 mr-2" />
+                      )}
+                      <span className="font-medium text-gray-800">
+                        {transaction.type === "earned_report"
+                          ? "Report Reward"
+                          : transaction.type === "earned_collect"
+                          ? "Collection Reward"
+                          : "Redeemed"}
+                      </span>
                     </div>
+                    <span
+                      className={`font-semibold ${
+                        transaction.type.startsWith("earned")
+                          ? "text-green-500"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {transaction.type.startsWith("earned") ? "+" : "-"}
+                      {transaction.amount}
+                    </span>
                   </div>
-                  <span
-                    className={`font-semibold ${
-                      transaction.type.startsWith("earned")
-                        ? "text-green-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {transaction.type.startsWith("earned") ? "+" : "-"}
-                    {transaction.amount}
-                  </span>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {transaction.description}
+                  </p>
+                  <p className="text-xs text-gray-500">{transaction.date}</p>
                 </div>
               ))
             ) : (

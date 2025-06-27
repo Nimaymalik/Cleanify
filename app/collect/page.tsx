@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { toast } from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 
 import { Button } from "../../components/ui/button";
 import {
@@ -35,12 +36,13 @@ type CollectionTask = {
 };
 
 export default function CollectPage() {
+  const { user, isSignedIn, isLoaded } = useUser();
   const [tasks, setTasks] = useState<CollectionTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredWasteType, setHoveredWasteType] = useState<string | null>(null);
   const [searchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [user, setUser] = useState<{
+  const [dbUser, setDbUser] = useState<{
     id: number;
     email: string;
     name: string;
@@ -56,19 +58,25 @@ export default function CollectPage() {
 
   useEffect(() => {
     const fetchUserAndTasks = async () => {
+      if (!isLoaded) return;
+      
+      if (!isSignedIn) {
+        toast.error("Please log in to access this page.");
+        return;
+      }
+
       setLoading(true);
       try {
-        const userEmail = localStorage.getItem("userEmail");
+        const userEmail = user?.emailAddresses?.[0]?.emailAddress;
         if (userEmail) {
           const fetchedUser = await getUserByEmail(userEmail);
           if (fetchedUser) {
-            setUser(fetchedUser);
+            setDbUser(fetchedUser);
           } else {
             toast.error("User not found. Please log in again.");
           }
         } else {
-          toast.error("User not logged in. Please log in.");
-          window.location.href = "/login";
+          toast.error("User email not available. Please log in again.");
           return;
         }
         const fetchedTasks = await getWasteCollectionTasks();
@@ -81,23 +89,23 @@ export default function CollectPage() {
       }
     };
     fetchUserAndTasks();
-  }, []);
+  }, [user, isSignedIn, isLoaded]);
 
   const handleStatusChange = async (
     taskId: number,
     newStatus: CollectionTask["status"]
   ) => {
-    if (!user) {
+    if (!dbUser) {
       toast.error("Please log in to collect waste.");
       return;
     }
     try {
-      const updatedTask = await updateTaskStatus(taskId, newStatus, user.id);
+      const updatedTask = await updateTaskStatus(taskId, newStatus, dbUser.id);
       if (updatedTask) {
         setTasks(
           tasks.map((task) =>
             task.id === taskId
-              ? { ...task, status: newStatus, collectorId: user.id }
+              ? { ...task, status: newStatus, collectorId: dbUser.id }
               : task
           )
         );
@@ -123,7 +131,7 @@ export default function CollectPage() {
   };
 
   const handleVerify = async () => {
-    if (!selectedTask || !user) {
+    if (!selectedTask || !dbUser) {
       toast.error("Missing required information for verification.");
       return;
     }
@@ -131,8 +139,8 @@ export default function CollectPage() {
       setVerificationStatus("verifying");
       await handleStatusChange(selectedTask.id, "verified");
       const earnedReward = Math.floor(Math.random() * 50) + 10;
-      await saveReward(user.id, earnedReward);
-      await saveCollectedWaste(selectedTask.id, user.id, {
+      await saveReward(dbUser.id, earnedReward);
+      await saveCollectedWaste(selectedTask.id, dbUser.id, {
         wasteTypeMatch: true,
         quantityMatch: true,
         confidence: 1,
@@ -156,6 +164,29 @@ export default function CollectPage() {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
+
+  if (!isLoaded) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader className="animate-spin h-8 w-8 text-gray-500" />
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+        <div className="text-center">
+          <h1 className="text-3xl font-semibold mb-6 text-gray-800">
+            Please Log In
+          </h1>
+          <p className="text-gray-600">
+            You need to be logged in to access the waste collection tasks.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
@@ -219,7 +250,7 @@ export default function CollectPage() {
                     </Button>
                   )}
                   {task.status === "in_progress" &&
-                    task.collectorId === user?.id && (
+                    task.collectorId === dbUser?.id && (
                       <Button
                         onClick={() => setSelectedTask(task)}
                         variant="outline"
@@ -229,7 +260,7 @@ export default function CollectPage() {
                       </Button>
                     )}
                   {task.status === "in_progress" &&
-                    task.collectorId !== user?.id && (
+                    task.collectorId !== dbUser?.id && (
                       <span className="text-yellow-600 text-sm font-medium">
                         In progress by another collector
                       </span>
