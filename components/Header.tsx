@@ -152,10 +152,21 @@ export default function Header({ onMenuClick }: HeaderProps) {
                       <DropdownMenuItem
                         key={n.id}
                         onClick={() => handleNotificationClick(n.id)}
+                        className={n.type === "reward" ? "bg-green-50 hover:bg-green-100 border-l-4 border-green-400" : ""}
                       >
-                        <div className="flex flex-col">
-                          <span className="font-medium">{n.type}</span>
-                          <span className="text-sm text-gray-500">{n.message}</span>
+                        <div className="flex items-start space-x-2">
+                          {n.type === "reward" && (
+                            <svg className="w-5 h-5 text-green-500 mt-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2l4 -4" />
+                              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                            </svg>
+                          )}
+                          <div className="flex flex-col">
+                            <span className={`font-semibold ${n.type === "reward" ? "text-green-700" : "text-gray-800"}`}>
+                              {n.type.charAt(0).toUpperCase() + n.type.slice(1)}
+                            </span>
+                            <span className="text-sm text-gray-600">{n.message}</span>
+                          </div>
                         </div>
                       </DropdownMenuItem>
                     ))
