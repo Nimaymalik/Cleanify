@@ -5,6 +5,7 @@ import { Upload, Loader } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { toast } from "react-hot-toast";
 import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
 
 import {
   createReport,
@@ -240,10 +241,12 @@ export default function ReportPage() {
 
             {preview && (
               <div className="mt-4">
-                <img
+                <Image
                   src={preview}
                   alt="Preview"
                   className="w-full h-32 object-cover rounded-md"
+                  width={400}
+                  height={128}
                 />
               </div>
             )}
@@ -289,10 +292,12 @@ export default function ReportPage() {
                     <p>Amount: {report.amount}</p>
                   </div>
                   {report.imageUrl && (
-                    <img
+                    <Image
                       src={report.imageUrl}
                       alt="Report"
                       className="w-full h-20 object-cover rounded-md mt-2"
+                      width={400}
+                      height={80}
                     />
                   )}
                 </div>

@@ -46,7 +46,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const { user, isSignedIn, isLoaded } = useUser();
   const { signOut } = useClerk();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const isMobile = useMediaQuery("(max-width: 768px)");
   const [balance, setBalance] = useState(0);
   const [signInOpen, setSignInOpen] = useState(false);
   const pathname = usePathname();
